@@ -1,44 +1,34 @@
-# Carregando pacotes necessários
+# Instalar o pacote randomForest se ainda não estiver instalado
+# install.packages("randomForest")
+
+# Carregar o pacote
 library(randomForest)
-library(caret)
 
-# Carregando os dados
-data <- read.csv("./heart.csv")
+# Carregar os dados
+dados <- read.csv("heart.csv")
 
-data$sex <- as.factor(data$sex)
-data$cp <- as.factor(data$cp)
-data$fbs <- as.factor(data$fbs)
-data$restecg <- as.factor(data$restecg)
-data$exng <- as.factor(data$exng)
-data$slp <- as.factor(data$slp)
-data$caa <- as.factor(data$caa)
-data$thall <- as.factor(data$thall)
-
-# Separando características e rótulos
-features <- data[, names(data) != "output"]
-labels <- data$output
-
-# Dividindo os dados em conjuntos de treino e teste
+# Dividir os dados em conjuntos de treinamento e teste
 set.seed(42) # Para reprodutibilidade
-index <- createDataPartition(labels, p = .8, list = FALSE)
-train_features <- features[index, ]
-train_labels <- labels[index]
-test_features <- features[-index, ]
-test_labels <- labels[-index]
+indices <- sample(1:nrow(dados), nrow(dados) * 0.8)
+train_data <- dados[indices, ]
+test_data <- dados[-indices, ]
 
-# Normalizando as características
-train_features_scaled <- scale(train_features)
-test_features_scaled <- scale(test_features, center = attr(train_features_scaled, "scaled:center"), 
-                              scale = attr(train_features_scaled, "scaled:scale"))
+# Treinar o modelo Random Forest
+# Convertendo 'output' para fator
+modelo_rf <- randomForest(as.factor(output) ~ ., data = train_data)
 
-# Treinando o modelo Random Forest
-rf_model <- randomForest(x = train_features_scaled, y = train_labels, ntree = 100)
+# Avaliar o modelo no conjunto de teste
+predicoes <- predict(modelo_rf, test_data)
 
-# Fazendo previsões e avaliando o modelo
-predictions <- predict(rf_model, test_features_scaled)
-conf_matrix <- confusionMatrix(predictions, test_labels)
+# Comparar as previsões com os valores reais
+matriz_confusao <- table(
+    Predicted = predicoes,
+    Actual = as.factor(test_data$output)
+)
 
-# Exibindo a precisão e o relatório de classificação
-print(conf_matrix$overall['Accuracy'])
-print(conf_matrix)
+# Exibir a matriz de confusão
+print(matriz_confusao)
 
+# Calculando a acurácia
+acuracia <- sum(diag(matriz_confusao)) / sum(matriz_confusao)
+print(paste("Acurácia:", acuracia))
