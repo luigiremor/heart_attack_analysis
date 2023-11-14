@@ -7,15 +7,20 @@ library(randomForest)
 # Carregar os dados
 dados <- read.csv("heart.csv")
 
-dados$sex <- as.factor(dados$sex)
-dados$cp <- as.factor(dados$cp)
-dados$fbs <- as.factor(dados$fbs)
-dados$restecg <- as.factor(dados$restecg)
-dados$slp <- as.factor(dados$slp)
-dados$caa <- as.factor(dados$caa)
-dados$thall <- as.factor(dados$thall)
-dados$output <- as.factor(dados$output)
-dados$exng <- as.factor(dados$exng)
+vars_to_factor <- c(
+    "sex",
+    "cp",
+    "fbs",
+    "restecg",
+    "exng",
+    "slp",
+    "caa",
+    "thall",
+    "output"
+)
+dados[vars_to_factor] <- lapply(dados[vars_to_factor], as.factor)
+
+
 # Dividir os dados em conjuntos de treinamento e teste
 set.seed(42) # Para reprodutibilidade
 indices <- sample(seq_len(nrow(dados)), size = 0.8 * nrow(dados))
@@ -42,3 +47,7 @@ print(matriz_confusao)
 acuracia <- sum(diag(matriz_confusao)) / sum(matriz_confusao)
 print(paste("Acurácia:", acuracia))
 
+# Calculando a precisão
+precisao <- matriz_confusao[2, 2] / sum(matriz_confusao[, 2])
+
+print(paste("Precisão:", precisao))
