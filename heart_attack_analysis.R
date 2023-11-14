@@ -1,12 +1,10 @@
-# Instalar o pacote randomForest se ainda não estiver instalado
-# install.packages("randomForest")
-
-# Carregar o pacote
+# Carregar pacotes necessários
+library(caret)
 library(randomForest)
+library(e1071) # Para SVM
 
-# Carregar os dados
+# Carregar os dados e preparar para modelagem
 dados <- read.csv("heart.csv")
-
 vars_to_factor <- c(
     "sex",
     "cp",
@@ -18,36 +16,48 @@ vars_to_factor <- c(
     "thall",
     "output"
 )
+
 dados[vars_to_factor] <- lapply(dados[vars_to_factor], as.factor)
 
-
 # Dividir os dados em conjuntos de treinamento e teste
-set.seed(42) # Para reprodutibilidade
+set.seed(42)
 indices <- sample(seq_len(nrow(dados)), size = 0.8 * nrow(dados))
 train_data <- dados[indices, ]
 test_data <- dados[-indices, ]
 
-# Treinar o modelo Random Forest
-# Convertendo 'output' para fator
-modelo_rf <- randomForest(as.factor(output) ~ ., data = train_data)
+# Preparar dados para modelagem (converter a variável de saída em fator com dois níveis)
+train_data$output <- as.factor(train_data$output)
+test_data$output <- as.factor(test_data$output)
 
-# Avaliar o modelo no conjunto de teste
-predicoes <- predict(modelo_rf, test_data)
+# Inicializar lista para armazenar resultados dos modelos
+results <- list()
 
-# Comparar as previsões com os valores reais
-matriz_confusao <- table(
-    Predicted = predicoes,
-    Actual = as.factor(test_data$output)
-)
+# Função para calcular métricas de desempenho
+calculate_metrics <- function(predictions, actual) {
+    confusion_matrix <- table(Predicted = predictions, Actual = actual)
+    accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+    precision <- confusion_matrix[2, 2] / sum(confusion_matrix[2, ])
+    recall <- confusion_matrix[2, 2] / sum(confusion_matrix[, 2])
+    f1_score <- 2 * precision * recall / (precision + recall)
+    auc_value <- roc(actual, as.numeric(predictions))$auc
+    return(list(accuracy = accuracy, precision = precision, recall = recall, f1_score = f1_score, AUC = auc_value))
+}
 
-# Exibir a matriz de confusão
-print(matriz_confusao)
+# Treinar e avaliar Random Forest
+modelo_rf <- randomForest(output ~ ., data = train_data)
+predicoes_rf <- predict(modelo_rf, test_data)
+results$RandomForest <- calculate_metrics(predicoes_rf, test_data$output)
 
-# Calculando a acurácia
-acuracia <- sum(diag(matriz_confusao)) / sum(matriz_confusao)
-print(paste("Acurácia:", acuracia))
+# Treinar e avaliar Regressão Logística
+modelo_log <- glm(output ~ ., data = train_data, family = "binomial")
+predicoes_log <- predict(modelo_log, test_data, type = "response")
+predicoes_log <- ifelse(predicoes_log > 0.5, "1", "0")
+results$LogisticRegression <- calculate_metrics(as.factor(predicoes_log), test_data$output)
 
-# Calculando a precisão
-precisao <- matriz_confusao[2, 2] / sum(matriz_confusao[, 2])
+# Treinar e avaliar SVM
+modelo_svm <- svm(output ~ ., data = train_data, probability = TRUE)
+predicoes_svm <- predict(modelo_svm, test_data, probability = TRUE)
+results$SVM <- calculate_metrics(predicoes_svm, test_data$output)
 
-print(paste("Precisão:", precisao))
+# Exibir resultados
+print(results)
