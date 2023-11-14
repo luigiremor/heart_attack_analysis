@@ -44,7 +44,7 @@ calculate_metrics <- function(predictions, actual) {
 }
 
 # Treinar e avaliar Random Forest
-modelo_rf <- randomForest(output ~ ., data = train_data)
+modelo_rf <- randomForest(output ~ ., data = train_data, ntree = 200, minsplit = 2, nodesize = 4, maxnodes = 100)
 predicoes_rf <- predict(modelo_rf, test_data)
 results$RandomForest <- calculate_metrics(predicoes_rf, test_data$output)
 
