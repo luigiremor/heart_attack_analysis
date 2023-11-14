@@ -2,6 +2,7 @@
 library(caret)
 library(randomForest)
 library(e1071) # Para SVM
+library(pROC) # Para AUC
 
 # Carregar os dados e preparar para modelagem
 dados <- read.csv("heart.csv")
