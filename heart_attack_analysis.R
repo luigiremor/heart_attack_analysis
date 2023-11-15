@@ -50,7 +50,9 @@ predicoes_rf <- predict(modelo_rf, test_data)
 results$RandomForest <- calculate_metrics(predicoes_rf, test_data$output)
 
 # Treinar e avaliar Regressão Logística
-modelo_log <- glm(output ~ ., data = train_data, family = "binomial")
+modelo_null <- glm(output ~ 1, family = binomial(), data = train_data)
+modelo_log_step <- step(modelo_null, scope = list(lower = modelo_null, upper = glm(output ~ ., data = train_data, family = "binomial")), direction = "forward", trace = FALSE)
+modelo_log <- glm(modelo_log_step, data = train_data, family = binomial())
 predicoes_log <- predict(modelo_log, test_data, type = "response")
 predicoes_log <- ifelse(predicoes_log > 0.5, "1", "0")
 results$LogisticRegression <- calculate_metrics(as.factor(predicoes_log), test_data$output)
