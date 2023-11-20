@@ -51,7 +51,7 @@ results$RandomForest <- calculate_metrics(predicoes_rf, test_data$output)
 
 # Treinar e avaliar Regressão Logística
 modelo_null <- glm(output ~ 1, family = binomial(), data = train_data)
-modelo_log_step <- step(modelo_null, scope = list(lower = modelo_null, upper = glm(output ~ ., data = train_data, family = "binomial")), direction = "forward", trace = FALSE)
+modelo_log_step <- step(modelo_null, scope = list(lower = modelo_null, upper = glm(output ~ ., data = train_data, family = "binomial")), direction = "forward")
 modelo_log <- glm(modelo_log_step, data = train_data, family = binomial())
 predicoes_log <- predict(modelo_log, test_data, type = "response")
 predicoes_log <- ifelse(predicoes_log > 0.5, "1", "0")
@@ -61,6 +61,13 @@ results$LogisticRegression <- calculate_metrics(as.factor(predicoes_log), test_d
 modelo_svm <- svm(output ~ ., data = train_data, probability = TRUE)
 predicoes_svm <- predict(modelo_svm, test_data, probability = TRUE)
 results$SVM <- calculate_metrics(predicoes_svm, test_data$output)
+
+# Importancia das variáveis para o modelo de Random Forest
+varImp(modelo_rf)
+
+# Importancia das variáveis para o modelo de Regressão Logística
+varImp(modelo_log)
+summary(modelo_log)
 
 # Exibir resultados
 print(results)
